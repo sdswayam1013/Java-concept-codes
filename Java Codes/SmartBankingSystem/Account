@@ -1,0 +1,289 @@
+import java.util.*;
+// Design and implement a Bank Account Management System in Java using Object-Oriented Programming (OOP) principles. 
+// The system should allow users to create and manage multiple types of accounts — Savings, Current, and Loan Accounts — each with its own rules for deposits, withdrawals, and interest or loan payments.
+// The system should demonstrate the use of interfaces, abstract classes, inheritance, encapsulation, and polymorphism.
+// Requirements
+
+// Interface Account
+// Define a contract for all types of accounts. It should declare the following methods:
+// void deposit(double amount) — deposit money into the account.
+// void withdraw(double amount) — withdraw money from the account.
+// double getBalance() — get current balance.
+// String getAccountNumber() — get the account identifier.
+
+// Abstract Class BaseAccount
+// Implements Account interface.
+// Provides shared fields:
+// accountNumber (immutable)
+// balance (modifiable)
+
+// Provides a common implementation for deposit.
+// Leaves withdraw() as abstract, because withdrawal rules differ between account types.
+
+// Ensures encapsulation using private/protected fields and getters.
+// Concrete Subclasses
+
+// SavingsAccount
+// Allows withdrawal only if sufficient balance exists.
+// Can apply monthly interest (e.g., 3% annually).
+
+// CurrentAccount
+// Allows withdrawal even if balance becomes negative up to a fixed overdraft limit.
+
+// LoanAccount
+// Does not allow withdrawals.
+// Allows paying EMI amounts to reduce the loan balance.
+
+// Dynamic Interaction
+// The program should accept user input to:
+// Create accounts
+// Deposit money
+// Withdraw money
+// Apply interest (SavingsAccount)
+// Pay EMI (LoanAccount)
+// Check account balances
+
+// Polymorphism-Use runtime polymorphism for withdraw() — different behavior depending on account type.
+// Optionally, demonstrate compile-time polymorphism via method overloading (e.g., multiple deposit methods).
+
+// Collections- Store accounts dynamically using a Map or List for easy retrieval.
+
+
+
+// --------------- Interface (Abstraction) ---------------
+interface Account {
+    void deposit(double amount);
+    void withdraw(double amount);
+    double getBalance();
+    String getAccountNumber();
+}
+
+// --------------- Abstract Class (Partial Implementation + Encapsulation) ---------------
+abstract class BaseAccount implements Account {
+    private final String accountNumber;
+    protected double balance;
+
+    public BaseAccount(String accountNumber, double initialBalance) {
+        this.accountNumber = accountNumber;
+        this.balance = initialBalance;
+    }
+
+    @Override
+    public void deposit(double amount) {
+        if (amount <= 0) {
+            System.out.println("❌ Deposit must be positive!");
+            return;
+        }
+        balance += amount;
+        System.out.println("✅ Deposited ₹" + amount + " successfully!");
+    }
+
+    @Override
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+
+    @Override
+    public double getBalance() {
+        return balance;
+    }
+
+    // Abstract method for runtime polymorphism
+    public abstract void withdraw(double amount);
+}
+
+// --------------- Subclass 1: SavingsAccount (Implements Interest-bearing Behavior) ---------------
+class SavingsAccount extends BaseAccount {
+    private static final double INTEREST_RATE = 0.03; // 3%
+
+    public SavingsAccount(String accNum, double balance) {
+        super(accNum, balance);
+    }
+
+    @Override
+    public void withdraw(double amount) {
+        if (amount <= 0) {
+            System.out.println("❌ Invalid amount!");
+        } else if (amount > balance) {
+            System.out.println("❌ Insufficient funds!");
+        } else {
+            balance -= amount;
+            System.out.println("✅ Withdrawn ₹" + amount + " from Savings Account.");
+        }
+    }
+
+    public void applyInterest() {
+        double interest = balance * INTEREST_RATE;
+        balance += interest;
+        System.out.println("💰 Interest of ₹" + interest + " added.");
+    }
+}
+
+// --------------- Subclass 2: CurrentAccount (Overdraft Feature) ---------------
+class CurrentAccount extends BaseAccount {
+    private static final double OVERDRAFT_LIMIT = 5000;
+
+    public CurrentAccount(String accNum, double balance) {
+        super(accNum, balance);
+    }
+
+    @Override
+    public void withdraw(double amount) {
+        if (amount <= 0) {
+            System.out.println("❌ Invalid amount!");
+        } else if (amount > balance + OVERDRAFT_LIMIT) {
+            System.out.println("❌ Withdrawal exceeds overdraft limit!");
+        } else {
+            balance -= amount;
+            System.out.println("✅ Withdrawn ₹" + amount + " from Current Account.");
+        }
+    }
+}
+
+// --------------- Subclass 3: LoanAccount (EMI Payments Only) ---------------
+class LoanAccount extends BaseAccount {
+    public LoanAccount(String accNum, double loanAmount) {
+        super(accNum, loanAmount);
+    }
+
+    @Override
+    public void withdraw(double amount) {
+        System.out.println("❌ Withdrawals not allowed for Loan Accounts.");
+    }
+
+    public void payEMI(double amount) {
+        if (amount <= 0) {
+            System.out.println("❌ EMI amount must be positive!");
+            return;
+        }
+        balance -= amount;
+        System.out.println("✅ EMI of ₹" + amount + " paid. Remaining loan: ₹" + balance);
+    }
+}
+
+// --------------- Main Class: Dynamic Execution via Scanner ---------------
+public class SmartBankSystem {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        Map<String, Account> accounts = new HashMap<>();
+
+        System.out.println("🏦 Welcome to Smart Bank System!");
+        boolean running = true;
+
+        while (running) {
+            System.out.println("\n==== MENU ====");
+            System.out.println("1️⃣  Create Savings Account");
+            System.out.println("2️⃣  Create Current Account");
+            System.out.println("3️⃣  Create Loan Account");
+            System.out.println("4️⃣  Deposit Money");
+            System.out.println("5️⃣  Withdraw Money");
+            System.out.println("6️⃣  Apply Interest (Savings Only)");
+            System.out.println("7️⃣  Pay EMI (Loan Only)");
+            System.out.println("8️⃣  Check Balance");
+            System.out.println("9️⃣  Exit");
+            System.out.print("👉 Enter your choice: ");
+
+            int choice = sc.nextInt();
+            sc.nextLine(); // consume newline
+
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter Account Number: ");
+                    String sAcc = sc.nextLine();
+                    System.out.print("Enter Initial Balance: ");
+                    double sBal = sc.nextDouble();
+                    accounts.put(sAcc, new SavingsAccount(sAcc, sBal));
+                    System.out.println("✅ Savings Account Created!");
+                    break;
+
+                case 2:
+                    System.out.print("Enter Account Number: ");
+                    String cAcc = sc.nextLine();
+                    System.out.print("Enter Initial Balance: ");
+                    double cBal = sc.nextDouble();
+                    accounts.put(cAcc, new CurrentAccount(cAcc, cBal));
+                    System.out.println("✅ Current Account Created!");
+                    break;
+
+                case 3:
+                    System.out.print("Enter Account Number: ");
+                    String lAcc = sc.nextLine();
+                    System.out.print("Enter Loan Amount: ");
+                    double loanAmt = sc.nextDouble();
+                    accounts.put(lAcc, new LoanAccount(lAcc, loanAmt));
+                    System.out.println("✅ Loan Account Created!");
+                    break;
+
+                case 4:
+                    System.out.print("Enter Account Number: ");
+                    String dAcc = sc.nextLine();
+                    Account depAcc = accounts.get(dAcc);
+                    if (depAcc != null) {
+                        System.out.print("Enter Deposit Amount: ");
+                        double amt = sc.nextDouble();
+                        depAcc.deposit(amt); // compile-time polymorphism
+                    } else {
+                        System.out.println("❌ Account not found!");
+                    }
+                    break;
+
+                case 5:
+                    System.out.print("Enter Account Number: ");
+                    String wAcc = sc.nextLine();
+                    Account withAcc = accounts.get(wAcc);
+                    if (withAcc != null) {
+                        System.out.print("Enter Withdraw Amount: ");
+                        double amt = sc.nextDouble();
+                        withAcc.withdraw(amt); // runtime polymorphism
+                    } else {
+                        System.out.println("❌ Account not found!");
+                    }
+                    break;
+
+                case 6:
+                    System.out.print("Enter Savings Account Number: ");
+                    String iAcc = sc.nextLine();
+                    Account acc = accounts.get(iAcc);
+                    if (acc instanceof SavingsAccount) {
+                        ((SavingsAccount) acc).applyInterest();
+                    } else {
+                        System.out.println("❌ Not a Savings Account!");
+                    }
+                    break;
+
+                case 7:
+                    System.out.print("Enter Loan Account Number: ");
+                    String emiAcc = sc.nextLine();
+                    Account loan = accounts.get(emiAcc);
+                    if (loan instanceof LoanAccount) {
+                        System.out.print("Enter EMI Amount: ");
+                        double emi = sc.nextDouble();
+                        ((LoanAccount) loan).payEMI(emi);
+                    } else {
+                        System.out.println("❌ Not a Loan Account!");
+                    }
+                    break;
+
+                case 8:
+                    System.out.print("Enter Account Number: ");
+                    String bAcc = sc.nextLine();
+                    Account balAcc = accounts.get(bAcc);
+                    if (balAcc != null) {
+                        System.out.println("💰 Current Balance: ₹" + balAcc.getBalance());
+                    } else {
+                        System.out.println("❌ Account not found!");
+                    }
+                    break;
+
+                case 9:
+                    running = false;
+                    System.out.println("👋 Thank you for using Smart Bank!");
+                    break;
+
+                default:
+                    System.out.println("❌ Invalid choice!");
+            }
+        }
+        sc.close();
+    }
+}
